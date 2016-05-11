@@ -61,14 +61,16 @@ function create() {
 
     cursors = game.input.keyboard.createCursorKeys();
 
-    userText = game.add.text(16, 16, 'users: 1', {fontSize: '32px', fill: '#16718F'});  //displays num users online
-    loginText = game.add.text(200, 16, '', {fontSize: '32px', fill: '#36718F'});      //displays user join and leave
+    // online user count display
+    userText = game.add.text(16, 16, 'users: 1', {fontSize: '32px', fill: '#16718F'});
+    // user connect and disconnect display
+    loginText = game.add.text(200, 16, '', {fontSize: '32px', fill: '#36718F'});
 }
 
 /// SOCKET.IO EVENT LISTENERS ///
 
 // receive other player's info
-socket.on('userhashmap', function(msg) {
+socket.on('userHashMap', function(msg) {
     //put the other player's info into userHashMap
     userHashMap = msg;
 });
@@ -80,9 +82,9 @@ socket.on('connect', function() {
     // send info about your character to the server
     setInterval(function() {
         // only send data if the character has moved
-        if (!(socket.id in userHashMap)) {
+        if(!(socket.id in userHashMap)) {
             socket.emit('clientinfo', [myX, myY, myAnim]);
-        } else if (userHashMap[socket.id][0] != myY || userHashMap[socket.id][1] != myX) {
+        } else if(userHashMap[socket.id][0] != myY || userHashMap[socket.id][1] != myX) {
             socket.emit('clientinfo', [myX, myY, myAnim]);
         }
     }, 100);
@@ -95,17 +97,17 @@ function update() {
     for(var user in userHashMap) {
         userCount += 1;
         var noBuddy = true; // does this user not already have a buddy
-        if (user != socketID) {
+        if(user != socketID) {
             buddys.forEach(function (guy) {
-                if (guy.name == user) {
+                if(guy.name == user) {
                     noBuddy = false;
 
                     // interpolate the guy's position to the current one
                     game.physics.arcade.moveToXY(guy,userHashMap[guy.name][0],userHashMap[guy.name][1], 300, 70);
                     // is guy too far away from buddy
-                    if (game.physics.arcade.distanceToXY(guy,userHashMap[guy.name][0],userHashMap[guy.name][1]) > MAX_BUDDY_DISTANCE) {
+                    if(game.physics.arcade.distanceToXY(guy,userHashMap[guy.name][0],userHashMap[guy.name][1]) > MAX_BUDDY_DISTANCE) {
                         buddyDistanceTimer += 1;
-                        if (buddyDistanceTimer > MAX_BUDDY_DISTANCED_TIME) {
+                        if(buddyDistanceTimer > MAX_BUDDY_DISTANCED_TIME) {
                             // snaps to non-interpolated position if too far away from it
                             guy.body.position.x = userHashMap[guy.name][0];
                             guy.body.position.y = userHashMap[guy.name][1];
@@ -113,13 +115,13 @@ function update() {
                     } else buddyDistanceTimer = 0;
 
                     // set the animations for the buddy
-                    if (userHashMap[guy.name][2] == 'stop') {
+                    if(userHashMap[guy.name][2] == 'stop') {
                         guy.animations.stop();
                         guy.frame = 4;
-                    } else if (userHashMap[guy.name][2] == 'jump_left') {
+                    } else if(userHashMap[guy.name][2] == 'jump_left') {
                         guy.animations.stop();
                         guy.frame = 3;
-                    } else if (userHashMap[guy.name][2] == 'jump_right') {
+                    } else if(userHashMap[guy.name][2] == 'jump_right') {
                         guy.animations.stop();
                         guy.frame = 6;
                     } else {
@@ -127,7 +129,7 @@ function update() {
                     }
                 }
             },this);
-            if (noBuddy) {
+            if(noBuddy) {
                 // create a buddy for this player
                 var buddy = buddys.create(userHashMap[user][0], userHashMap[user][1], 'dude');
                 buddy.tint = '0x' + (Math.round(Math.random()*Math.pow(2, 24))).toString(16);
@@ -149,7 +151,7 @@ function update() {
         var nouser = true;
         for(var user in userHashMap) {
             // make sure buddy is not destroyed if player still exists
-            if (guy.name == user) {
+            if(guy.name == user) {
                 nouser = false;
             }
         }
@@ -170,13 +172,13 @@ function update() {
     myX = player.x;
     myY = player.y;
 
-    if (cursors.left.isDown) {
+    if(cursors.left.isDown) {
         // Move to the left
         player.body.velocity.x  = -150;
 
         player.animations.play('left');
         myAnim = 'left';
-    } else if (cursors.right.isDown) {
+    } else if(cursors.right.isDown) {
         player.body.velocity.x  = 150;
 
         player.animations.play('right');
@@ -188,17 +190,17 @@ function update() {
         myAnim = 'stop';
     }
 
-    if (cursors.up.isDown && player.body.touching.down) {
+    if(cursors.up.isDown && player.body.touching.down) {
         player.body.velocity.y  = -555;
     }
 
-    if (player.body.velocity.x > 0 && !player.body.touching.down) {
+    if(player.body.velocity.x > 0 && !player.body.touching.down) {
         player.animations.stop();
         player.frame = 6;
         myAnim = 'jump_right';
     }
 
-    if (player.body.velocity.x < 0 && !player.body.touching.down) {
+    if(player.body.velocity.x < 0 && !player.body.touching.down) {
         player.animations.stop();
         player.frame = 3;
         myAnim = 'jump_left';
