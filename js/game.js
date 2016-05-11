@@ -2,6 +2,11 @@
 // (c) 2016 by Milan Gruner
 // Based on: https://github.com/vezwork/phasocketonline
 
+// constants
+var MAX_BUDDY_DISTANCE = 60;
+var MAX_BUDDY_DISTANCED_TIME = 10;
+
+// variables
 var platforms, player, cursors;
 var userscount = 0, addBuddy = 0;
 var userText, login = ' ', loginText = '';
@@ -85,27 +90,29 @@ socket.on('connect', function() {
 function update() {
     // buddy control
     userscount = 0;
-    for(var user in userhashmap) {                  //iterate through all connected players
-        userscount += 1;
-        var nobuddy = true;                         //flag for if a buddy has been created for this user already
-        if (user != socketid) {                     //if the connected user isn't you
-            buddys.forEach(function (guy) {         //iterate through current representations of players
-                if (guy.name == user) {             //if a guy (individual buddy) has already been created
-                    //***manipulating buddys already present in room***
-                    nobuddy = false;                //a buddy has already been created for this user
 
+    // iterate over all connected players
+    for(var user in userhashmap) {
+        userscount += 1;
+        var nobuddy = true; // does this user not already have a buddy
+        if (user != socketid) {
+            buddys.forEach(function (guy) {
+                if (guy.name == user) {
+                    nobuddy = false;
+
+                    // interpolate the guy's position to the current one
                     game.physics.arcade.moveToXY(guy,userhashmap[guy.name][0],userhashmap[guy.name][1], 300, 70);
-                    //above: interpolate the guy's position to the current one
-                    //below: checks if a guy gets too far away from where hes supposed to be and deals with it.
-                    if (game.physics.arcade.distanceToXY(guy,userhashmap[guy.name][0],userhashmap[guy.name][1]) > 60) { //arbitrary 60 can be fiddled with
+                    // is guy too far away from buddy
+                    if (game.physics.arcade.distanceToXY(guy,userhashmap[guy.name][0],userhashmap[guy.name][1]) > MAX_BUDDY_DISTANCE) {
                         buddydistancetimer += 1;
-                        if (buddydistancetimer > 10) { //arbitrary 10 can be fiddled with
-                            guy.body.position.x = userhashmap[guy.name][0]; //snaps to non-interpolated position
-                            guy.body.position.y = userhashmap[guy.name][1]; //if too far away from it
+                        if (buddydistancetimer > MAX_BUDDY_DISTANCED_TIME) {
+                            // snaps to non-interpolated position if too far away from it
+                            guy.body.position.x = userhashmap[guy.name][0];
+                            guy.body.position.y = userhashmap[guy.name][1];
                         }
                     } else buddydistancetimer = 0;
 
-                    //below: set the animations for the buddy
+                    // set the animations for the buddy
                     if (userhashmap[guy.name][2] == 'stop') {
                         guy.animations.stop();
                         guy.frame = 4;
@@ -120,31 +127,37 @@ function update() {
                     }
                 }
             },this);
-            if (nobuddy) {  //no buddy has been created for this user, so create one
-                var buddy = buddys.create(userhashmap[user][0], userhashmap[user][1], 'dude');  //create buddy
-                buddy.tint = '0x' + (Math.round(Math.random()*Math.pow(2, 24))).toString(16);   //random color
-                buddy.name = user;                                //identify the buddy with it's corresponding user
+            if (nobuddy) {
+                // create a buddy for this player
+                var buddy = buddys.create(userhashmap[user][0], userhashmap[user][1], 'dude');
+                buddy.tint = '0x' + (Math.round(Math.random()*Math.pow(2, 24))).toString(16);
+                buddy.name = user;
                 buddy.animations.add('left', [0,1,2,3], 10, true);
                 buddy.animations.add('right', [5,6,7,8], 10, true);
                 buddy.frame = 4;
 
-                loginText.text = user.substr(0,5) + '.. joined'; //first time creating a buddy so user just joined
+                loginText.text = user.substr(0,5) + '.. joined';
             }
         }
     }
-    userText.text = 'users: ' + userscount; //update displayed ammount of users
 
-    //destroy buddies if they are not in the hashmap (the user left the game)
-    buddys.forEach(function (guy) { //iterate through all buddys
+    //update displayed ammount of users
+    userText.text = 'users: ' + userscount;
+
+    //destroy buddies if their users left the game
+    buddys.forEach(function (guy) {
         var nouser = true;
         for(var user in userhashmap) {
-            if (guy.name == user) { //if the buddy represents a documented user
-                nouser = false;     //then make sure he is not destroyed
+            // make sure buddy is not destroyed if player still exists
+            if (guy.name == user) {
+                nouser = false;
             }
         }
-        if (nouser) {               //if the user is gone from the hashmap but the buddy still exists
-            guy.destroy();          //destroy that buddy
-            loginText.text = guy.name.substr(0,5) + '.. left';  //tell the player that the user left the game
+
+        if(nouser) {
+            // destroy buddy if buddy still exists but user doesn't
+            guy.destroy();
+            loginText.text = guy.name.substr(0,5) + '.. left';
         }
     });
 
