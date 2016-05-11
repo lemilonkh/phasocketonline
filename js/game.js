@@ -89,17 +89,16 @@ socket.on('connect', function() {
 });
 
 function update() {
-    // buddy control
     userCount = 0;
 
     // iterate over all connected players
     for(var user in userHashMap) {
         userCount += 1;
-        var nobuddy = true; // does this user not already have a buddy
+        var noBuddy = true; // does this user not already have a buddy
         if (user != socketID) {
             buddys.forEach(function (guy) {
                 if (guy.name == user) {
-                    nobuddy = false;
+                    noBuddy = false;
 
                     // interpolate the guy's position to the current one
                     game.physics.arcade.moveToXY(guy,userHashMap[guy.name][0],userHashMap[guy.name][1], 300, 70);
@@ -128,7 +127,7 @@ function update() {
                     }
                 }
             },this);
-            if (nobuddy) {
+            if (noBuddy) {
                 // create a buddy for this player
                 var buddy = buddys.create(userHashMap[user][0], userHashMap[user][1], 'dude');
                 buddy.tint = '0x' + (Math.round(Math.random()*Math.pow(2, 24))).toString(16);
